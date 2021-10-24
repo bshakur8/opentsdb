@@ -927,7 +927,9 @@ class HttpJsonSerializer extends HttpSerializer {
     // We want the serializer to execute serially so we need to create a callback
     // chain so that when one DPsResolver is finished, it triggers the next to
     // start serializing.
-    final Deferred<Object> cb_chain = new Deferred<Object>();
+    final int LIMIT = 1 << 14;
+    int counter = 0;
+    Deferred<Object> cb_chain = new Deferred<Object>();
 
     for (DataPoints[] separate_dps : results) {
       for (DataPoints dps : separate_dps) {
@@ -935,6 +937,12 @@ class HttpJsonSerializer extends HttpSerializer {
           cb_chain.addCallback(new DPsResolver(dps));
         } catch (Exception e) {
           throw new RuntimeException("Unexpected error durring resolution", e);
+        }
+        if (++counter >= LIMIT) {
+          counter = 0;
+          // trigger the callback chain chunk here
+          cb_chain.callback(null);
+          cb_chain = new Deferred<Object>();
         }
       }
     }
@@ -970,8 +978,10 @@ class HttpJsonSerializer extends HttpSerializer {
       }
     }
 
-    // trigger the callback chain here
-    cb_chain.callback(null);
+    if (counter > 0) {
+      // trigger the callback chain leftovers here
+      cb_chain.callback(null);
+    }
     return cb_chain.addCallback(new FinalCB());
   }
   
