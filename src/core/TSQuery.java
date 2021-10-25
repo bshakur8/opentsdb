@@ -108,6 +108,9 @@ public final class TSQuery {
   /** Override default max row count limit */
   private boolean override_data_point_limit;
   
+  /** Drop empty TSUIDs*/
+  private boolean drop_empty_tsuids;
+  
   /**
    * Default constructor necessary for POJO de/serialization
    */
@@ -122,7 +125,7 @@ public final class TSQuery {
     // We also don't care about stats or summary
     return Objects.hashCode(start, end, timezone, use_calendar, options, padding, 
         no_annotations, with_global_annotations, show_tsuids, queries, 
-        ms_resolution);
+        ms_resolution, drop_empty_tsuids);
   }
   
   @Override
@@ -151,6 +154,7 @@ public final class TSQuery {
         && Objects.equal(with_global_annotations, query.with_global_annotations)
         && Objects.equal(show_tsuids, query.show_tsuids)
         && Objects.equal(queries, query.queries)
+        && Objects.equal(drop_empty_tsuids, query.drop_empty_tsuids)
         && Objects.equal(ms_resolution, query.ms_resolution);
   }
   
@@ -293,6 +297,8 @@ public final class TSQuery {
       .append(show_tsuids)
       .append(", ms_resolution=")
       .append(ms_resolution)
+      .append(", drop_empty_tsuids=")
+      .append(drop_empty_tsuids)
       .append(", options=[");
     if (options != null && !options.isEmpty()) {
       int counter = 0;
@@ -518,6 +524,17 @@ public final class TSQuery {
    * override the data point limit. */
   public void setOverrideDataPointLimit(boolean override_data_point_limit) {
     this.override_data_point_limit = override_data_point_limit;
+  }
+  
+  /** @return Whether or not the query would like to drop empty TSUIDs. */
+  public boolean dropEmptyTSUIDs() {
+    return drop_empty_tsuids;
+  }
+  
+  /** @param drop_empty_tsuids Whether or not the query would like to
+   * drop empty TSDUIS from result. */
+  public void SetDropEmptyTSUIDs(boolean drop_empty_tsuids) {
+    this.drop_empty_tsuids = drop_empty_tsuids;
   }
 
 }
