@@ -924,17 +924,61 @@ class HttpJsonSerializer extends HttpSerializer {
 
     }
     
+    class DPsChecker {
+
+      /**
+       * Check if drop empty data points
+       * @param dps DPs to check
+       * @return True iff drop empty datapoints
+       */
+      boolean is_drop(final DataPoints dps) {
+        if (!data_query.dropEmptyTSUIDs()) {
+          return false;
+        }
+        return dps.size() == 0;
+      }
+
+      /**
+       * Check if DPs are valid to requested time range
+       * @param dps DPs to Check
+       * @return False iff all DPs are out of requested time range
+       */
+      boolean is_in_time_range(final DataPoints dps) {
+        for (final DataPoint dp : dps) {
+          final long ts = dp.timestamp();
+          if (ts >= data_query.startTime() && ts <= data_query.endTime()) {
+            // found at least one DP with time range
+            return true;
+          }
+        }
+        return false;
+      }
+
+      /**
+       * Check if DPs are valid to be returned in the result
+       * @param dps DPs to Check
+       * @return True iff DPs can be found in results
+       */
+      public boolean is_valid(final DataPoints dps) {
+        return (!is_drop(dps) && is_in_time_range(dps));
+      }
+    }
+
+
     // We want the serializer to execute serially so we need to create a callback
     // chain so that when one DPsResolver is finished, it triggers the next to
     // start serializing.
     final int LIMIT = 1 << 13;
     int counter = 0;
     Deferred<Object> cb_chain = new Deferred<Object>();
+    final DPsChecker dps_check = new DPsChecker();
 
     for (DataPoints[] separate_dps : results) {
       for (DataPoints dps : separate_dps) {
         try {
-          cb_chain.addCallback(new DPsResolver(dps));
+          if (dps_check.is_valid(dps)) {
+            cb_chain.addCallback(new DPsResolver(dps));
+          }
         } catch (Exception e) {
           throw new RuntimeException("Unexpected error durring resolution", e);
         }

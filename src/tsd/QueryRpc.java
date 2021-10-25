@@ -570,6 +570,10 @@ final class QueryRpc implements HttpRpc {
     if (query.hasQueryStringParam("show_summary")) {
         data_query.setShowSummary(true);
     }
+  
+    if (query.hasQueryStringParam("drop_empty_tsuids")) {
+      data_query.SetDropEmptyTSUIDs(true);
+    }
     
     // handle tsuid queries first
     if (query.hasQueryStringParam("tsuid")) {
